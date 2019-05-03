@@ -43,13 +43,13 @@ class School(object):
 def gen_idds(url, driver):
 
 	driver.get(url)
+	time.sleep(4) #wait for page to load
 	p_element = driver.page_source
-	soup = BeautifulSoup(p_element, 'html.parser')
+	soup = BeautifulSoup(p_element, "lxml")
 	links = soup.select(".icl-TextLink.icl-TextLink--primary.rezemp-u-h4")
 
 	idds=[]
 
-	print(len(links))
 	for link in links:
 		path = link.get("href")
 		#print(path[8:path.find("?")]) #8 is to account for "\resume\" at the beginning
@@ -64,7 +64,7 @@ def gen_resume(idd, driver):
 
 	driver.get(URL)
 	p_element = driver.page_source
-	soup = BeautifulSoup(p_element, 'html.parser')
+	soup = BeautifulSoup(p_element, 'lxml')
 
 	results = soup.find_all('div', attrs={"class":"rezemp-ResumeDisplaySection"})
 	#print(results)
@@ -142,7 +142,6 @@ def mine(URL, override=True, rangee=None):
 			idds = gen_idds(URL+"&start="+str(start_index), driver)
 			print(idds)
 			if(len(idds) == 0):
-				print("fail")
 				time.sleep(4) #wait a little bit, try again
 				continue
 
