@@ -5,9 +5,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+from multiprocessing.pool import ThreadPool
 import time
 import json
 import threading
+import traceback
 from random import randint
 from time import sleep
 import os
@@ -43,10 +45,11 @@ def gen_idds(url, driver):
 	driver.get(url)
 	p_element = driver.page_source
 	soup = BeautifulSoup(p_element, 'html.parser')
-	links = soup.find_all(class_="icl-TextLink icl-TextLink--primary rezemp-u-h4")
+	links = soup.select(".icl-TextLink.icl-TextLink--primary.rezemp-u-h4")
 
 	idds=[]
 
+	print(len(links))
 	for link in links:
 		path = link.get("href")
 		#print(path[8:path.find("?")]) #8 is to account for "\resume\" at the beginning
@@ -104,14 +107,14 @@ def gen_resume(idd, driver):
 
 
 
-def mine(name, URL, override=True, rangee=None):
+def mine(URL, override=True, rangee=None):
 	driver = webdriver.Chrome()
 	driver.implicitly_wait(10)
 
 
-	if(override):
-		with open('resume_output' + name + '.json', 'w') as outfile:
-			outfile.write("")
+	# if(override):
+	# 	with open('resume_output' + name + '.json', 'w') as outfile:
+	# 		outfile.write("")
 
 
 	if rangee == None:	
@@ -124,64 +127,87 @@ def mine(name, URL, override=True, rangee=None):
 
 	print(start_index, target)
 
-	while 1:
-		if (start_index >= target):
-			break
-		
-		stri = URL+"&start="+str(start_index)
-		print(stri)
-		# wait = WebDriverWait(driver, 20)
-		# element = wait.until(EC.presence_of_all_elements_located())
-		idds = gen_idds(URL+"&start="+str(start_index), driver)
-		print(idds)
-		if(len(idds) == 0):
-			time.sleep(4)
-			continue
+	resumes = []
+
+	try:
+
+		while 1:
+			if (start_index >= target):
+				break
+			
+			stri = URL+"&start="+str(start_index)
+			print(stri)
+			# wait = WebDriverWait(driver, 20)
+			# element = wait.until(EC.presence_of_all_elements_located())
+			idds = gen_idds(URL+"&start="+str(start_index), driver)
+			print(idds)
+			if(len(idds) == 0):
+				print("fail")
+				time.sleep(4) #wait a little bit, try again
+				continue
 
 
+			for idd in idds:
+				resumes.append(gen_resume(idd, driver))
 
+			start_index+=50
 
-		for idd in idds:
-			with open('resume_output' + name + '.json', 'a') as outfile:
-				json.dump(gen_resume(idd, driver).toJSON(), outfile)
+	except Exception:
 
-		start_index+=50
+		traceback.print_exc()
+
+	finally:
+		try:
+			driver.close()
+		except:
+			pass
+		return resumes
 
 	# resumes = [gen_resume(idd).toJSON() for idd in idds] 
 
-	driver.close()
+	
 
 
-def mine_multi(name, url, override=True):
+def mine_multi(url, override=True):
 
 
 	thread_list = []
 	names = []
 
-	target = 8000
-	tr = 8
-	for i in range(tr):
-		# Instantiates the thread
-		# (i) does not make a sequence, so (i,)
-		t = threading.Thread(target=mine, args=(name+str(i),url,), kwargs={"override" : override, "rangee" : (i*(target//tr), (i+1)*(target//tr)),})
-		# Sticks the thread in a list so that it remains accessible
-		thread_list.append(t)
-		names.append("resume_output" + name + str(i) +".json")
 
-	# Starts threads
-	for thread in thread_list:
-		thread.start()
+	pool = ThreadPool(processes=1)
 
-	# This blocks the calling thread until the thread whose join() method is called is terminated.
-	# From http://docs.python.org/2/library/threading.html#thread-objects
-	for thread in thread_list:
-		thread.join()
+	async_result = pool.apply_async(mine, (url,), {"rangee": (0, 50)}) # tuple of args for foo
+
+# do some other stuff in the main process
+
+	resumes = async_result.get()  # get the return value from your function.
+	return resumes
+	# target = 8000
+	# tr = 8
+	# for i in range(tr):
+	# 	# Instantiates the thread
+	# 	# (i) does not make a sequence, so (i,)
+	# 	t = threading.Thread(target=mine, args=(url,), kwargs={"override" : override, "rangee" : (i*(target//tr), (i+1)*(target//tr)),})
+	# 	# Sticks the thread in a list so that it remains accessible
+	# 	thread_list.append(t)
+	# 	names.append("resume_output" + name + str(i) +".json")
+
+	# # Starts threads
+	# for thread in thread_list:
+	# 	thread.start()
+
+	# # This blocks the calling thread until the thread whose join() method is called is terminated.
+	# # From http://docs.python.org/2/library/threading.html#thread-objects
+	# for thread in thread_list:
+	# 	thread.join()
 
 
-	consolidate_files(name, names)
+	# consolidate_files(name, names)
 
 
 def consolidate_files(name, names):
+	#takes in a list of file names, appends contents of each file to "name" file and deletes each source
 	file = open("resume_output" + name + ".json", "a")
 	for nam in names:
 		with open(nam, 'r') as read:
@@ -189,6 +215,11 @@ def consolidate_files(name, names):
 		os.remove(nam)
 			
 	file.close()
+
+
+def write_out_json(name, resumes):
+	with open(name + ".json", "w") as file:
+		json.dump(resumes, file)
 
 
 
@@ -209,10 +240,18 @@ def main():
 
 	#consolidate_files("lawyer-california", ["resume_outputlawyer-california" + str(i) +".json" for i in range(8)])
 
-	mine_multi("doctor-california", URL)
+	# driver = webdriver.Chrome()
+	# driver.implicitly_wait(30)
+
+	# print(gen_idds("https://resumes.indeed.com/search?q=doctor&l=california&searchFields=&start=0", driver))
 
 
-	print(time.clock() - t),
 
+	resumes = mine_multi(URL)
+	write_out_json("resume_output_california_doctors", resumes)
+
+
+
+	# print(time.clock() - t)
 
 main()
