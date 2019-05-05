@@ -11,8 +11,34 @@ import json
 import threading
 import traceback
 from random import randint
+from threading import Thread
 from time import sleep
 import os
+
+class Thread2(Thread):
+	def __init__(self, group=None, target=None, name=None,
+				 args=(), kwargs={}, Verbose=None):
+		Thread.__init__(self, group, target, name, args, kwargs)
+		self._return = None
+	def run(self):
+		print(type(self._target))
+		if self._target is not None:
+			self._return = self._target(*self._args,
+												**self._kwargs)
+	def join(self, *args):
+		Thread.join(self, *args)
+		return self._return
+
+class CustomEncoder(json.JSONEncoder):
+	def default(self, z):
+		if isinstance(z, Resume):
+			return {"id": z.id, "jobs": z.jobs, "schools": z.schools}
+		elif isinstance(z, Job):
+			return {"title": z.title, "company": z.company, "location": z.location, "hire_date": z.hire_date}
+		elif isinstance(z, School):
+			return {"degree": z.degree, "school_name": z.school_name, "grad_date": z.grad_date}
+		else:
+			return super().default(z)
 
 class Resume(object):
 
@@ -52,8 +78,8 @@ def gen_idds(url, driver):
 
 	for link in links:
 		path = link.get("href")
-		#print(path[8:path.find("?")]) #8 is to account for "\resume\" at the beginning
-		idds.append(path[8:path.find("?")])
+		#print(path[8:path.find("?")]) 
+		idds.append(path[8:path.find("?")]) #8 is to account for "\resume\" at the beginning
 
 	return idds
 #print(idds)
@@ -172,25 +198,27 @@ def mine_multi(url, override=True):
 
 	thread_list = []
 	names = []
+	resumes = []
 
 
-	pool = ThreadPool(processes=1)
+	pool = ThreadPool(processes=8)
 
-	async_result = pool.apply_async(mine, (url,), {"rangee": (0, 50)}) # tuple of args for foo
+	async_result = pool.apply_async(mine, (url,)) # tuple of args for foo
+
+	#{"rangee": (0, 50)}
 
 # do some other stuff in the main process
 
 	resumes = async_result.get()  # get the return value from your function.
-	return resumes
+# 	return resumes
 	# target = 8000
-	# tr = 8
+	# tr = 2
 	# for i in range(tr):
 	# 	# Instantiates the thread
 	# 	# (i) does not make a sequence, so (i,)
-	# 	t = threading.Thread(target=mine, args=(url,), kwargs={"override" : override, "rangee" : (i*(target//tr), (i+1)*(target//tr)),})
+	# 	t = Thread2(target=mine, args=(url,), kwargs={"override" : override, "rangee" : (i*(target//tr), (i+1)*(target//tr)),})
 	# 	# Sticks the thread in a list so that it remains accessible
 	# 	thread_list.append(t)
-	# 	names.append("resume_output" + name + str(i) +".json")
 
 	# # Starts threads
 	# for thread in thread_list:
@@ -199,8 +227,10 @@ def mine_multi(url, override=True):
 	# # This blocks the calling thread until the thread whose join() method is called is terminated.
 	# # From http://docs.python.org/2/library/threading.html#thread-objects
 	# for thread in thread_list:
-	# 	thread.join()
+	# 	resumes.append(thread.join())
 
+
+	return resumes
 
 	# consolidate_files(name, names)
 
@@ -218,7 +248,7 @@ def consolidate_files(name, names):
 
 def write_out_json(name, resumes):
 	with open(name + ".json", "w") as file:
-		json.dump(resumes, file)
+		json.dump(resumes, file, cls = CustomEncoder)
 
 
 
