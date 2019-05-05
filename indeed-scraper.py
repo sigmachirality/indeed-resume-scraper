@@ -134,7 +134,7 @@ def gen_resume(idd, driver):
 
 
 def mine(URL, override=True, rangee=None):
-	driver = webdriver.Chrome()
+	driver = webdriver.Chrome(os.path.dirname(os.path.abspath(__file__)) +  os.sep + "chromedriver.exe")
 	driver.implicitly_wait(10)
 
 
@@ -144,33 +144,37 @@ def mine(URL, override=True, rangee=None):
 
 
 	if rangee == None:	
-		start_index = 700
+		start_index = 0 #700
 		target = 10901
 	else:
 		start_index = rangee[0]
 		target = rangee[1]
 
 
-	print(start_index, target)
+	#print(start_index, target)
 
 	resumes = []
 
+	fail_ctr = 0
+	
 	try:
 
 		while 1:
-			if (start_index >= target):
+			if (start_index >= target or fail_ctr >= 5):
 				break
 			
 			stri = URL+"&start="+str(start_index)
-			print(stri)
+			#print(stri)
 			# wait = WebDriverWait(driver, 20)
 			# element = wait.until(EC.presence_of_all_elements_located())
 			idds = gen_idds(URL+"&start="+str(start_index), driver)
-			print(idds)
-			if(len(idds) == 0):
+			
+			if (len(idds) == 0):
 				time.sleep(4) #wait a little bit, try again
+				fail_ctr += 1
 				continue
 
+			fail_ctr = 0
 
 			for idd in idds:
 				resumes.append(gen_resume(idd, driver))
@@ -247,8 +251,10 @@ def consolidate_files(name, names):
 
 
 def write_out_json(name, resumes):
+	print("Writing out data...")
 	with open(name + ".json", "w") as file:
 		json.dump(resumes, file, cls = CustomEncoder)
+	print("Done!")
 
 
 
@@ -262,7 +268,7 @@ def main():
 
 	#URL = "https://resumes.indeed.com/search?l=california&q=software%20engineer&searchFields="
 
-	URL = "https://resumes.indeed.com/search?q=doctor&l=california&searchFields="
+	URL = "https://resumes.indeed.com/search?q=engineer&l=california&searchFields="
 
 	#mine("software_engineers_california", URL, override = False)
 
@@ -277,7 +283,7 @@ def main():
 
 
 	resumes = mine_multi(URL)
-	write_out_json("resume_output_california_doctors", resumes)
+	write_out_json("resume_output_california_engineers", resumes)
 
 
 
