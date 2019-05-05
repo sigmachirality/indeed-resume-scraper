@@ -239,22 +239,34 @@ def mine_multi(url, override=True):
 	# consolidate_files(name, names)
 
 
-def consolidate_files(name, names):
-	#takes in a list of file names, appends contents of each file to "name" file and deletes each source
-	file = open("resume_output" + name + ".json", "a")
-	for nam in names:
-		with open(nam, 'r') as read:
-			file.write(read.read())
-		os.remove(nam)
+# def consolidate_files(name, names):
+# 	#takes in a list of file names, appends contents of each file to "name" file and deletes each source
+# 	file = open("resume_output" + name + ".json", "a")
+# 	for nam in names:
+# 		with open(nam, 'r') as read:
+# 			file.write(read.read())
+# 		os.remove(nam)
 			
-	file.close()
+# 	file.close()
 
 
-def write_out_json(name, resumes):
+def write_out_json(file_path, resumes):
 	print("Writing out data...")
-	with open(name + ".json", "w") as file:
+	with open(file_path, "w") as file:
 		json.dump(resumes, file, cls = CustomEncoder)
 	print("Done!")
+
+
+
+def process_query(job, location, path = None):
+	file_name = "output_data_" + job + "_" + location + ".json"
+	if (path == None):
+		path = os.path.dirname(os.path.abspath(__file__)) + os.sep + file_name
+	path += os.sep + file_name
+
+	URL = "https://resumes.indeed.com/search?q=" + job + "&l=" + location + "&searchFields="
+	resumes = mine_multi(URL)
+	write_out_json(path, resumes)
 
 
 
@@ -289,4 +301,6 @@ def main():
 
 	# print(time.clock() - t)
 
-main()
+
+if __name__ == "___main___":
+	main()
