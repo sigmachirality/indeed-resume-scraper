@@ -11,7 +11,6 @@ import json
 import threading
 import traceback
 from random import randint
-from threading import Thread
 from time import sleep
 import os
 
@@ -138,11 +137,6 @@ def mine(URL, override=True, rangee=None):
 	driver.implicitly_wait(10)
 
 
-	# if(override):
-	# 	with open('resume_output' + name + '.json', 'w') as outfile:
-	# 		outfile.write("")
-
-
 	if rangee == None:	
 		start_index = 0 #700
 		target = 10901
@@ -164,9 +158,6 @@ def mine(URL, override=True, rangee=None):
 				break
 			
 			stri = URL+"&start="+str(start_index)
-			#print(stri)
-			# wait = WebDriverWait(driver, 20)
-			# element = wait.until(EC.presence_of_all_elements_located())
 			idds = gen_idds(URL+"&start="+str(start_index), driver)
 			
 			if (len(idds) == 0):
@@ -211,43 +202,10 @@ def mine_multi(url, override=True):
 
 	#{"rangee": (0, 50)}
 
-# do some other stuff in the main process
-
 	resumes = async_result.get()  # get the return value from your function.
-# 	return resumes
-	# target = 8000
-	# tr = 2
-	# for i in range(tr):
-	# 	# Instantiates the thread
-	# 	# (i) does not make a sequence, so (i,)
-	# 	t = Thread2(target=mine, args=(url,), kwargs={"override" : override, "rangee" : (i*(target//tr), (i+1)*(target//tr)),})
-	# 	# Sticks the thread in a list so that it remains accessible
-	# 	thread_list.append(t)
-
-	# # Starts threads
-	# for thread in thread_list:
-	# 	thread.start()
-
-	# # This blocks the calling thread until the thread whose join() method is called is terminated.
-	# # From http://docs.python.org/2/library/threading.html#thread-objects
-	# for thread in thread_list:
-	# 	resumes.append(thread.join())
 
 
 	return resumes
-
-	# consolidate_files(name, names)
-
-
-# def consolidate_files(name, names):
-# 	#takes in a list of file names, appends contents of each file to "name" file and deletes each source
-# 	file = open("resume_output" + name + ".json", "a")
-# 	for nam in names:
-# 		with open(nam, 'r') as read:
-# 			file.write(read.read())
-# 		os.remove(nam)
-			
-# 	file.close()
 
 
 def write_out_json(file_path, resumes):
