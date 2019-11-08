@@ -261,7 +261,7 @@ def write_out_json(file_path, resumes):
 def process_query(job, location, path = None):
 	file_name = "output_data_" + job + "_" + location + ".json"
 	if (path == None):
-		path = os.path.dirname(os.path.abspath(__file__)) + os.sep + file_name
+		path = os.path.dirname(os.path.abspath(__file__))
 	path += os.sep + file_name
 
 	URL = "https://resumes.indeed.com/search?q=" + job + "&l=" + location + "&searchFields="
@@ -271,36 +271,11 @@ def process_query(job, location, path = None):
 
 
 def main():
+	
+	job = "data scientist"
+	location = "San Francisco"
+	process_query(job, location)
 
 
-
-	t = time.clock();
-
-	#idds = ["f845ad88e3d17704", "1992c61c49a470e1"]
-
-	#URL = "https://resumes.indeed.com/search?l=california&q=software%20engineer&searchFields="
-
-	URL = "https://resumes.indeed.com/search?q=engineer&l=california&searchFields="
-
-	#mine("software_engineers_california", URL, override = False)
-
-
-	#consolidate_files("lawyer-california", ["resume_outputlawyer-california" + str(i) +".json" for i in range(8)])
-
-	# driver = webdriver.Chrome()
-	# driver.implicitly_wait(30)
-
-	# print(gen_idds("https://resumes.indeed.com/search?q=doctor&l=california&searchFields=&start=0", driver))
-
-
-
-	resumes = mine_multi(URL)
-	write_out_json("resume_output_california_engineers", resumes)
-
-
-
-	# print(time.clock() - t)
-
-
-if __name__ == "___main___":
+if __name__ == "__main__":
 	main()
