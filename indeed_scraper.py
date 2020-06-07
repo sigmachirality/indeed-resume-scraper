@@ -218,7 +218,7 @@ def write_out_json(file_path, resumes):
 
 def process_query(job, location, path = None):
 	file_name = "output_data_" + job + "_" + location + ".json"
-	if (path == None):
+	if path is None:
 		path = os.path.dirname(os.path.abspath(__file__))
 	path += os.sep + file_name
 
